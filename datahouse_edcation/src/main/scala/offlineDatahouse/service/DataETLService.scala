@@ -27,7 +27,7 @@ object DataETLService {
 		import sparkSession.implicits._
 
 		//过滤非JSON对象
-		val filterJSONRDD: RDD[String] = ssc.textFile("/user/atguigu/ods/member.log").filter(item => {
+		val filterJSONRDD: RDD[String] = ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/member.log").filter(item => {
 			val json: JSONObject = ParseJson.getJsonData(item)
 			json.isInstanceOf[JSONObject]
 		})
