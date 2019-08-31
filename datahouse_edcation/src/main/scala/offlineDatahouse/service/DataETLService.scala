@@ -1,15 +1,10 @@
 package offlineDatahouse.service
 
-import java.lang
-
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.streaming.dstream.DStream
-import org.apache.spark.streaming.{Seconds, StreamingContext}
-import com.alibaba.fastjson.{JSON, JSONObject}
+import com.alibaba.fastjson.JSONObject
+import offlineDatahouse.utils.ParseJson
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import offlineDatahouse.bean.MemberLog
-import offlineDatahouse.utils.ParseJson
 
 
 object DataETLService {
