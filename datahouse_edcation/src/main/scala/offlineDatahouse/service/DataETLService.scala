@@ -1,6 +1,6 @@
 package offlineDatahouse.service
 
-import com.alibaba.fastjson.JSONObject
+import com.alibaba.fastjson.{JSONObject, JSON}
 import offlineDatahouse.bean.{Member, QzPaperView, QzPoint, QzQuestion}
 import offlineDatahouse.utils.ParseJson
 import org.apache.spark.SparkContext
@@ -378,6 +378,7 @@ object DataETLService {
 				val answer = jsonObject.getString("answer")
 				val analysis = jsonObject.getString("analysis")
 				val limitminute = jsonObject.getString("limitminute")
+				//对分数保留1位小数
 				val score = BigDecimal.apply(jsonObject.getDoubleValue("score")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
 				val splitscore = BigDecimal.apply(jsonObject.getDoubleValue("splitscore")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
 				val status = jsonObject.getString("status")
@@ -438,43 +439,58 @@ object DataETLService {
 	 */
 	def etlQzPoint(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
-		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzPoint.log").filter(item => {
+
+		val filterRDD: RDD[String] = ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzPoint.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
-		}).mapPartitions(partitions => {
-			partitions.map(item => {
-				val jsonObject = ParseJson.getJsonData(item)
-				val pointid = jsonObject.getIntValue("pointid")
-				val courseid = jsonObject.getIntValue("courseid")
-				val pointname = jsonObject.getString("pointname")
-				val pointyear = jsonObject.getString("pointyear")
-				val chapter = jsonObject.getString("chapter")
-				val creator = jsonObject.getString("creator")
-				val createtime = jsonObject.getString("createtime")
-				val status = jsonObject.getString("status")
-				val modifystatus = jsonObject.getString("modifystatus")
-				val excisenum = jsonObject.getIntValue("excisenum")
-				val pointlistid = jsonObject.getIntValue("pointlistid")
-				val chapterid = jsonObject.getIntValue("chapterid")
-				val sequence = jsonObject.getString("sequence")
-				val pointdescribe = jsonObject.getString("pointdescribe")
-				val pointlevel = jsonObject.getString("pointlevel")
-				val typeslist = jsonObject.getString("typelist")
-				//"score": 83.86880766562163,  //知识点分数
-				//保留1位小数 并四舍五入
-				val score = BigDecimal(jsonObject.getDouble("score")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
-				val thought = jsonObject.getString("thought")
-				val remid = jsonObject.getString("remid")
-				val pointnamelist = jsonObject.getString("pointnamelist")
-				val typelistids = jsonObject.getString("typelistids")
-				val pointlist = jsonObject.getString("pointlist")
-				val dt = jsonObject.getString("dt")
-				val dn = jsonObject.getString("dn")
-				QzPoint(pointid, courseid, pointname, pointyear, chapter, creator, createtime, status, modifystatus, excisenum, pointlistid,
-					chapterid, sequence, pointdescribe, pointlevel, typeslist, score, thought, remid, pointnamelist, typelistids,
-					pointlist, dt, dn)
-			})
-		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_point")
+		})
+
+				filterRDD.mapPartitions(partitions => {
+					partitions.map(item => {
+						val jsonObject = ParseJson.getJsonData(item)
+						val pointid = jsonObject.getIntValue("pointid")
+						val courseid = jsonObject.getIntValue("courseid")
+						val pointname = jsonObject.getString("pointname")
+						val pointyear = jsonObject.getString("pointyear")
+						val chapter = jsonObject.getString("chapter")
+						val creator = jsonObject.getString("creator")
+						val createtime = jsonObject.getString("createtime")
+						val status = jsonObject.getString("status")
+						val modifystatus = jsonObject.getString("modifystatus")
+						val excisenum = jsonObject.getIntValue("excisenum")
+						val pointlistid = jsonObject.getIntValue("pointlistid")
+						val chapterid = jsonObject.getIntValue("chapterid")
+						val sequence = jsonObject.getString("sequence")
+						val pointdescribe = jsonObject.getString("pointdescribe")
+						val pointlevel = jsonObject.getString("pointlevel")
+						val typeslist = jsonObject.getString("typelist")
+						//"score": 83.86880766562163,  //知识点分数
+						//保留1位小数 并四舍五入
+						val score = BigDecimal(jsonObject.getDouble("score")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
+						val thought = jsonObject.getString("thought")
+						val remid = jsonObject.getString("remid")
+						val pointnamelist = jsonObject.getString("pointnamelist")
+						val typelistids = jsonObject.getString("typelistids")
+						val pointlist = jsonObject.getString("pointlist")
+						val dt = jsonObject.getString("dt")
+						val dn = jsonObject.getString("dn")
+						QzPoint(pointid, courseid, pointname, pointyear, chapter, creator, createtime, status, modifystatus, excisenum, pointlistid,
+							chapterid, sequence, pointdescribe, pointlevel, typeslist, score, thought, remid, pointnamelist, typelistids,
+							pointlist, dt, dn)
+					})
+				}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_point")
+
+
+//		//法二,解析JSON
+//		val etlData: RDD[QzPaperView] = filterRDD.mapPartitions(partition => {
+//			partition.map(item => {
+//				val jsonObject: JSONObject = JSON.parseObject(item)
+//				jsonObject.put("score", BigDecimal(jsonObject.getDouble("score")).setScale(1, BigDecimal.RoundingMode.HALF_UP))
+//				jsonObject.toJavaObject(classOf[QzPoint])
+//			})
+//		})
+//		etlData.toDF().coalesce(1).write.mode(SaveMode.Overwrite).insertInto("dwd.dwd_qz_point")
+//		sparkSession.sql("select * from dwd.dwd_qz_paper_view limit 10").show(false)
 	}
 
 
@@ -487,10 +503,13 @@ object DataETLService {
 	 */
 	def etlQzPaperView(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
-		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzPaperView.log").filter(item => {
+
+		val filterJsonRDD: RDD[String] = ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzPaperView.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
-		}).mapPartitions(partitions => {
+		})
+
+		val etlJsonRDD: RDD[QzPaperView] = filterJsonRDD.mapPartitions(partitions => {
 			partitions.map(item => {
 				val jsonObject = ParseJson.getJsonData(item)
 				val paperviewid = jsonObject.getIntValue("paperviewid")
@@ -523,7 +542,9 @@ object DataETLService {
 					conteststarttime, contestendtime, contesttimelimit, dayiid, status, creator, createtime, paperviewcatid, modifystatus,
 					description, papertype, downurl, paperuse, paperdifficult, testreport, paperuseshow, dt, dn)
 			})
-		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_paper_view")
+		})
+		etlJsonRDD.toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_paper_view")
+
 	}
 
 
