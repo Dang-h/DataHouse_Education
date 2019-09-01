@@ -5,7 +5,7 @@ import offlineDatahouse.utils.HiveUtil
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 
-object DwdMember {
+object DwsMember {
 
 	def main(args: Array[String]): Unit = {
 		System.setProperty("hadoop.home.dir", "C:\\Programs\\hadoop-2.7.2")
@@ -18,8 +18,21 @@ object DwdMember {
 		HiveUtil.openCompression(sparkSession) //开启压缩
 		HiveUtil.useSnappyCompression(sparkSession) //使用snappy压缩
 
-		DwsService.importMember(sparkSession, "20190722")
-//		DwsService.testLeftJoinFirst(sparkSession,"20190722")
+		val dt = "20190722"
+
+		//学员信息宽表拉链表导入
+		DwsService.importMember(sparkSession, dt)
+		//章节维度表
+		DwsService.saveDwsQzChapter(sparkSession, dt)
+		//课程维度表
+		DwsService.saveDwsQzCourse(sparkSession, dt)
+		//主修维度表
+		DwsService.saveDwsQzMajor(sparkSession, dt)
+		//试卷维度表
+		DwsService.saveDwsQzPaper(sparkSession, dt)
+		//题目维度表
+		DwsService.saveDwsQzQuestionTpe(sparkSession, dt)
+
 
 	}
 
