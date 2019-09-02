@@ -1,5 +1,14 @@
-package offlineDatahouse.bean
+package offlineDatahouse.bean.trans
 
+/**
+ * @ClassName QzPaperView
+ * @Description TODO
+ * @Author Dang-h
+ * @Email 54danghao@gmail.com
+ * @Date 2019-9-2 0002 9:53
+ * @Version 1.0
+ *
+ **/
 case class QzPaperView(paperviewid: Int,
 					   paperid: Int,
 					   paperviewname: String,

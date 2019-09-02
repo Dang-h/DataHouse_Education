@@ -1,7 +1,16 @@
-package offlineDatahouse.dao
+package offlineDatahouse.dao.qz
 
 import org.apache.spark.sql.SparkSession
 
+/**
+ * @ObjectName QzMajorDao
+ * @Description TODO
+ * @Author Dang-h
+ * @Email 54danghao@gmail.com
+ * @Date 2019-9-2 0002 10:35
+ * @Version 1.0
+ *
+ **/
 object QzMajorDao {
   def getQzMajor(sparkSession: SparkSession, dt: String) = {
     sparkSession.sql("select majorid,businessid,siteid,majorname,shortname,status,sequence,creator as major_creator," +

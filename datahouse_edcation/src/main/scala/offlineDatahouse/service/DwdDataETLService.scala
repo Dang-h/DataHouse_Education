@@ -1,14 +1,25 @@
 package offlineDatahouse.service
 
-import com.alibaba.fastjson.{JSONObject, JSON}
-import offlineDatahouse.bean.{Member, QzPaperView, QzPoint, QzQuestion}
+import com.alibaba.fastjson.{JSON, JSONObject}
+import offlineDatahouse.bean.trans.{QzPaperView, QzPoint, QzQuestion}
+import offlineDatahouse.bean.userInfo.Member
 import offlineDatahouse.utils.ParseJson
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 
 
-object DataETLService {
+/**
+  *@ClassName DwdDataETLService$
+  *@Description //TODO 对ods成数据进行清晰过滤存入dwd层
+  *
+  *@Author Dang-h
+  *@Email 54danghao@gmail.com
+  *@Date 9:14 2019-9-2 0002
+  *@Version 1.0
+  *
+ **/
+object DwdDataETLService {
 
 	/**
 	 * 敏感数据脱敏
@@ -27,10 +38,6 @@ object DataETLService {
 			val json: JSONObject = ParseJson.getJsonData(item)
 			json.isInstanceOf[JSONObject]
 		})
-		//		val filterJSONRDD: RDD[String] = ssc.textFile("D:\\DataHouse_Education\\datahouse_edcation\\input\\member.log").filter(item => {
-		//			val json: JSONObject = ParseJson.getJsonData(item)
-		//			json.isInstanceOf[JSONObject]
-		//		})
 
 		//关键数据脱敏
 		//mapPartitions作用:独立在RDD的每一个分区上进行RDD格式转换
@@ -74,7 +81,7 @@ object DataETLService {
 	def etlMemberLog1(sparkSession: SparkSession) = {
 		import sparkSession.implicits._
 		//		val logDataFrame: DataFrame = sparkSession.read.json("hdfs://hadoop102:9000/user/atguigu/ods/member.log")
-		//如果读入数据中有错误格式JSON会报错,无法对数据进行过滤
+		//TODO 如果读入数据中有错误格式JSON会报错,无法对数据进行过滤
 		val logDataFrame: DataFrame = sparkSession.read.json("D:\\DataHouse_Education\\datahouse_edcation\\input\\member.log")
 
 		//DataFrame 转DataSet
@@ -197,6 +204,7 @@ object DataETLService {
 	 */
 	def etlMemPayMoneyLog(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._ //隐式转换
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/pcentermempaymoney.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -217,13 +225,14 @@ object DataETLService {
 	}
 
 	/**
-	 * 用户vip基础数据
+	 * 用户vip等级基础数据
 	 *
 	 * @param ssc
 	 * @param sparkSession
 	 */
 	def etlMemVipLevelLog(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._ //隐式转换
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/pcenterMemViplevel.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -259,6 +268,7 @@ object DataETLService {
 	 */
 	def etlQzWebsite(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzWebsite.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -293,6 +303,7 @@ object DataETLService {
 	 */
 	def etlQzSiteCourse(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzSiteCourse.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -329,6 +340,7 @@ object DataETLService {
 	 */
 	def etlQzQuestionType(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzQuestionType.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -364,6 +376,7 @@ object DataETLService {
 	 */
 	def etlQzQuestion(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzQuestion.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -381,6 +394,7 @@ object DataETLService {
 				//对分数保留1位小数
 				val score = BigDecimal.apply(jsonObject.getDoubleValue("score")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
 				val splitscore = BigDecimal.apply(jsonObject.getDoubleValue("splitscore")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
+
 				val status = jsonObject.getString("status")
 				val optnum = jsonObject.getIntValue("optnum")
 				val lecture = jsonObject.getString("lecture")
@@ -467,6 +481,7 @@ object DataETLService {
 						//"score": 83.86880766562163,  //知识点分数
 						//保留1位小数 并四舍五入
 						val score = BigDecimal(jsonObject.getDouble("score")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
+
 						val thought = jsonObject.getString("thought")
 						val remid = jsonObject.getString("remid")
 						val pointnamelist = jsonObject.getString("pointnamelist")
@@ -481,7 +496,7 @@ object DataETLService {
 				}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_point")
 
 
-//		//法二,解析JSON
+//		//法二,解析JSON TODO 有问题,字段不匹配
 //		val etlData: RDD[QzPaperView] = filterRDD.mapPartitions(partition => {
 //			partition.map(item => {
 //				val jsonObject: JSONObject = JSON.parseObject(item)
@@ -572,7 +587,9 @@ object DataETLService {
 				val status = jsonObject.getString("status")
 				val creator = jsonObject.getString("creator")
 				val craetetime = jsonObject.getString("createtime")
+				//分数四舍五入
 				val totalscore = BigDecimal.apply(jsonObject.getString("totalscore")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
+
 				val chapterid = jsonObject.getIntValue("chapterid")
 				val chapterlistid = jsonObject.getIntValue("chapterlistid")
 				val dt = jsonObject.getString("dt")
@@ -592,6 +609,7 @@ object DataETLService {
 	 */
 	def etlQzMemberPaperQuestion(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzMemberPaperQuestion.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -610,7 +628,9 @@ object DataETLService {
 				val opertype = jsonObject.getString("opertype")
 				val paperid = jsonObject.getIntValue("paperid")
 				val spendtime = jsonObject.getIntValue("spendtime")
+
 				val score = BigDecimal.apply(jsonObject.getString("score")).setScale(1, BigDecimal.RoundingMode.HALF_UP)
+
 				val question_answer = jsonObject.getIntValue("question_answer")
 				val dt = jsonObject.getString("dt")
 				val dn = jsonObject.getString("dn")
@@ -628,6 +648,7 @@ object DataETLService {
 	 */
 	def etlQzMajor(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzMajor.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -660,6 +681,7 @@ object DataETLService {
 	 */
 	def etlQzCourseEdusubject(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzCourseEduSubject.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -688,6 +710,7 @@ object DataETLService {
 	 */
 	def etlQzCourse(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzCourse.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -722,6 +745,7 @@ object DataETLService {
 	 */
 	def etlQzChapterList(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzChapterList.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -752,7 +776,8 @@ object DataETLService {
 	 * @return
 	 */
 	def etlQzChapter(ssc: SparkContext, sparkSession: SparkSession) = {
-		import sparkSession.implicits._ //隐式转换
+		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzChapter.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -787,6 +812,7 @@ object DataETLService {
 	 */
 	def etlQzCenterPaper(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzCenterPaper.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -815,6 +841,7 @@ object DataETLService {
 	 */
 	def etlQzCenter(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzCenter.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]
@@ -852,6 +879,7 @@ object DataETLService {
 	 */
 	def etlQzBusiness(ssc: SparkContext, sparkSession: SparkSession) = {
 		import sparkSession.implicits._
+
 		ssc.textFile("hdfs://hadoop102:9000/user/atguigu/ods/QzBusiness.log").filter(item => {
 			val obj = ParseJson.getJsonData(item)
 			obj.isInstanceOf[JSONObject]

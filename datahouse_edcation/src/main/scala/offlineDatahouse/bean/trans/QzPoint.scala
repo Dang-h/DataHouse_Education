@@ -1,5 +1,14 @@
-package offlineDatahouse.bean
+package offlineDatahouse.bean.trans
 
+/**
+ * @ClassName QzPoint
+ * @Description TODO
+ * @Author Dang-h
+ * @Email 54danghao@gmail.com
+ * @Date 2019-9-2 0002 9:54
+ * @Version 1.0
+ *
+ **/
 case class QzPoint(pointid: Int,
 				   courseid: Int,
 				   pointname: String,
@@ -16,7 +25,7 @@ case class QzPoint(pointid: Int,
 				   pointdescribe: String,
 				   pointlevel: String,
 				   typelist: String,
-				   var score: BigDecimal,
+				   score: BigDecimal,
 				   thought: String,
 				   remid: String,
 				   pointnamelist: String,

@@ -5,7 +5,7 @@ import offlineDatahouse.utils.HiveUtil
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 
-object DwsMember {
+object DwsController {
 
 	def main(args: Array[String]): Unit = {
 		System.setProperty("hadoop.home.dir", "C:\\Programs\\hadoop-2.7.2")
@@ -22,6 +22,7 @@ object DwsMember {
 
 		//学员信息宽表拉链表导入
 		DwsService.importMember(sparkSession, dt)
+
 		//章节维度表
 		DwsService.saveDwsQzChapter(sparkSession, dt)
 		//课程维度表
@@ -32,7 +33,8 @@ object DwsMember {
 		DwsService.saveDwsQzPaper(sparkSession, dt)
 		//题目维度表
 		DwsService.saveDwsQzQuestionTpe(sparkSession, dt)
-
+		//做题宽表
+		DwsService.saveDwsUserPaperDetail(sparkSession,dt )
 
 	}
 

@@ -1,10 +1,20 @@
-package offlineDatahouse.dao
+package offlineDatahouse.dao.qz
 
 import org.apache.spark.sql.SparkSession
 
+/**
+ * @ObjectName UserPaperDetailDao
+ * @Description TODO
+ * @Author Dang-h
+ * @Email 54danghao@gmail.com
+ * @Date 2019-9-2 0002 10:35
+ * @Version 1.0
+ *
+ **/
 object UserPaperDetailDao {
 
   def getDwdQzMemberPaperQuestion(sparkSession: SparkSession, dt: String) = {
+
     sparkSession.sql("select userid,paperviewid,chapterid,sitecourseid,questionid,majorid,useranswer,istrue,lasttime,opertype," +
       s"paperid,spendtime,score,question_answer,dt,dn from dwd.dwd_qz_member_paper_question where dt='$dt'")
   }

@@ -1,5 +1,14 @@
-package offlineDatahouse.bean
+package offlineDatahouse.bean.userInfo
 
+/**
+ * @ClassName Member
+ * @Description TODO
+ * @Author Dang-h
+ * @Email 54danghao@gmail.com
+ * @Date 2019-9-2 0002 9:52
+ * @Version 1.0
+ *
+ **/
 case class Member(
                       var uid: String,
                       var ad_id: String,

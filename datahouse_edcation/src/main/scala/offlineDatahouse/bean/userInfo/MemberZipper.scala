@@ -1,4 +1,4 @@
-package offlineDatahouse.bean
+package offlineDatahouse.bean.userInfo
 
 case class MemberZipper(uid: Int,
 						var paymoney: String,
