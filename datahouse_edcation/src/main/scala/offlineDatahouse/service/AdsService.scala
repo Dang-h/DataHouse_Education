@@ -209,10 +209,10 @@ object AdsService {
 			  avg("spendtime").cast("decimal(10, 2)").as("avgspendtime"))
 		  .select("paperviewid", "paperviewname", "avgscore", "avgspendtime", "dt", "dn")
 
-//		avgDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_avgtimeandscore")
-//		avgDetail.show()
-//
-//		println("=============avgDetail============")
+		//		avgDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_avgtimeandscore")
+		//		avgDetail.show()
+		//
+		//		//println("=============avgDetail============")
 
 
 		//统计各试卷最高分、最低分
@@ -237,9 +237,9 @@ object AdsService {
 		  .select("paperviewid", "paperviewname", "maxscore", "minscore", "dt", "dn")
 
 		//导入数据表
-//		topScore.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_maxdetail")
-//		topScore.show()
-//		println("=============topScore============")
+		//		topScore.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_maxdetail")
+		//		topScore.show()
+		//		//println("=============topScore============")
 
 		//按试卷分组统计每份试卷的前三用户详情
 		/*
@@ -275,8 +275,8 @@ object AdsService {
 			  , "coursename", "majorname", "shortname", "papername", "score", "rk", "dt", "dn")
 
 		//数据导入
-//		top3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_top3_userdetail")
-//		top3UserDetail.show()
+		//		top3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_top3_userdetail")
+		//		top3UserDetail.show()
 
 		//按试卷分组统计每份试卷的倒数前三的用户详情
 		val low3UserDetail: DataFrame = sparkSession.sql("select *from dws.dws_user_paper_detail")
@@ -289,10 +289,10 @@ object AdsService {
 		  .select("userid", "paperviewid", "paperviewname", "chaptername", "pointname", "sitecoursename"
 			  , "coursename", "majorname", "shortname", "papername", "score", "rk", "dt", "dn")
 
-//		low3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_low3_userdetail")
-//		low3UserDetail.show()
+		//		low3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_low3_userdetail")
+		//		low3UserDetail.show()
 
-		println("=============low3UserDetail============")
+		//println("=============low3UserDetail============")
 
 
 		//统计各试卷各分段的用户id，分段有0-20,20-40,40-60，60-80,80-100
@@ -339,7 +339,7 @@ object AdsService {
 
 		paperScore.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_scoresegment_user")
 		paperScore.show()
-		println("=============paperScore============")
+		//println("=============paperScore============")
 
 
 		//统计试卷未及格的人数，及格的人数，试卷的及格率 及格分数60
@@ -391,7 +391,7 @@ object AdsService {
 		//释放缓存
 		necessaryDataDF.unpersist()
 		passRateDetail.show()
-		println("=============passRateDetail============")
+		//println("=============passRateDetail============")
 
 
 		//统计各题的错误数，正确数，错题率
@@ -417,7 +417,7 @@ object AdsService {
 		errorQuestionRate.write.mode(SaveMode.Append).insertInto("ads.ads_user_question_detail")
 		errorQuestionRate.unpersist()
 		errorQuestionRate.show()
-		println("=============errorQuestionRate============")
+		//println("=============errorQuestionRate============")
 
 	}
 

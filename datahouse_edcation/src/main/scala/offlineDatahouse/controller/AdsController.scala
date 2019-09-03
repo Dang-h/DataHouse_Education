@@ -8,9 +8,9 @@ import org.apache.spark.sql.SparkSession
 object AdsController {
 
 	def main(args: Array[String]): Unit = {
-		System.setProperty("hadoop.home.dir", "C:\\Programs\\hadoop-2.7.2")
-		System.setProperty("HADOOP_USER_NAME", "atguigu")
-		val sparkConf: SparkConf = new SparkConf().setAppName("dwd_member_import").setMaster("local[*]")
+//		System.setProperty("hadoop.home.dir", "C:\\Programs\\hadoop-2.7.2")
+//		System.setProperty("HADOOP_USER_NAME", "atguigu")
+		val sparkConf: SparkConf = new SparkConf().setAppName("dwd_member_import")//.setMaster("local[*]")
 		val sparkSession: SparkSession = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
 		val ssc: SparkContext = sparkSession.sparkContext
 
@@ -24,7 +24,7 @@ object AdsController {
 		//AdsQuiz
 		AdsService.QzQueryDetail(sparkSession, dt)
 
-		sparkSession.stop()
+//		sparkSession.stop()
 
 	}
 
