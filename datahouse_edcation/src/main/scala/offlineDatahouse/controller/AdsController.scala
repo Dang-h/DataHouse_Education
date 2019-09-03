@@ -19,11 +19,12 @@ object AdsController {
 		val dt = "20190722"
 
 		//AdsMember
-		AdsService.MemberQueryDetail(sparkSession, dt)
+//		AdsService.MemberQueryDetail(sparkSession, dt)
 
 		//AdsQuiz
 		AdsService.QzQueryDetail(sparkSession, dt)
 
+		sparkSession.stop()
 
 	}
 

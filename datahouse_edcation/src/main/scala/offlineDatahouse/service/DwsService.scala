@@ -29,7 +29,7 @@ object DwsService {
 		//宽表，以用户信息(dwd_member)为主表，在主表基础上并入其他明细表字段
 		//以uid（用户id）和dn（网站分区）为条件用主表left join 其他表，再根据日期来过滤得到数据
 		//s的作用：在字符串上下文的相应部分之间插入参数。
-		sparkSession.sql("select uid,first(ad_id),first(fullname),first(iconurl),first(lastlogin)," +
+		val memberWideTable: DataFrame = sparkSession.sql("select uid,first(ad_id),first(fullname),first(iconurl),first(lastlogin)," +
 		  "first(mailaddr),first(memberlevel),first(password),sum(cast(paymoney as decimal(10,4))),first(phone),first(qq)," +
 		  "first(register),first(regupdatetime),first(unitname),first(userip),first(zipcode)," +
 		  "first(appkey),first(appregurl),first(bdp_uuid),first(reg_createtime),first(domain)," +
@@ -48,10 +48,14 @@ object DwsService {
 		  "and a.dn=b.dn left join dwd.dwd_base_ad c on a.ad_id=c.adid and a.dn=c.dn left join " +
 		  " dwd.dwd_base_website d on b.websiteid=d.siteid and b.dn=d.dn left join dwd.dwd_pcentermempaymoney e" +
 		  s" on a.uid=e.uid and a.dn=e.dn left join dwd.dwd_vip_level f on e.vip_id=f.vip_id and e.dn=f.dn where a.dt='${time}')r  " +
-		  "group by uid,dn,dt").coalesce(1).write.mode(SaveMode.Overwrite).insertInto("dws.dws_member")
+		  "group by uid,dn,dt")
+
+		memberWideTable.coalesce(1).write.mode(SaveMode.Overwrite).insertInto("dws.dws_member")
 
 
-		//			sparkSession.sql("select * from dws.dws_member limit 10").show(false)
+		sparkSession.sql("select * from dws.dws_member limit 10")
+		println("===================memberWideTable=========================")
+
 
 		//查询当天增量信息
 		//  TODO 当天增量表
@@ -70,33 +74,33 @@ object DwsService {
 		//查询历史拉链表数据
 		val historyResult: Dataset[MemberZipper] = sparkSession.sql("select *from dws.dws_member_zipper").as[MemberZipper]
 
-		//		dayResult.show(false)
-
 		//两份数据根据用户id进行聚合 对end_time进行重新修改
-		val reuslt = dayResult.union(historyResult).groupByKey(item => item.uid + "_" + item.dn)
-
+		val memberZipperTable: Dataset[MemberZipperResult] = dayResult.union(historyResult).groupByKey(item => item.uid + "_" + item.dn)
 		  //mapGroup在每个分组中进行map操作
 		  .mapGroups {
 			  case (key, iters) =>
-			  val keys: Array[String] = key.split("_")
-			  val uid: String = keys(0)
-			  val dn: String = keys(1)
-			  val list: List[MemberZipper] = iters.toList.sortBy(item => item.start_time) //对开始时间进行排序
+				  val keys: Array[String] = key.split("_")
+				  val uid: String = keys(0)
+				  val dn: String = keys(1)
+				  //对开始时间进行排序
+				  val list: List[MemberZipper] = iters.toList.sortBy(item => item.start_time)
 
-			  if (list.size > 1 && "9999-12-31".equals(list(list.size - 2).end_time)) {
-				  //如果存在历史数据 需要对历史数据的end_time进行修改
+				  if (list.size > 1 && "9999-12-31".equals(list(list.size - 2).end_time)) {
+					  //如果存在历史数据 需要对历史数据的end_time进行修改
+					  //获取历史数据的最后一条数据
+					  val oldLastModel = list(list.size - 2)
+					  //获取当前时间最后一条数据
+					  val lastModel = list(list.size - 1)
+					  oldLastModel.end_time = lastModel.start_time
+					  lastModel.paymoney = (BigDecimal.apply(lastModel.paymoney) + BigDecimal(oldLastModel.paymoney)).toString()
+				  }
+				  MemberZipperResult(list)
+		  }
 
-				  //获取历史数据的最后一条数据
-				  val oldLastModel = list(list.size - 2)
-				  //获取当前时间最后一条数据
-				  val lastModel = list(list.size - 1)
+		memberZipperTable.flatMap(_.list).coalesce(3).write.mode(SaveMode.Overwrite).insertInto("dws.dws_member_zipper") //重组对象打散 刷新拉链表
 
-				  oldLastModel.end_time = lastModel.start_time
-				  lastModel.paymoney = (BigDecimal.apply(lastModel.paymoney) + BigDecimal(oldLastModel.paymoney)).toString()
-			  }
-
-			  MemberZipperResult(list)
-		  }.flatMap(_.list).coalesce(3).write.mode(SaveMode.Overwrite).insertInto("dws.dws_member_zipper") //重组对象打散 刷新拉链表
+		sparkSession.sql("select * from dws.dws_member_zipper limit 10")
+		println("===================memberZipperTable=========================")
 
 	}
 //	==============================================做题模块=======================================================//
@@ -131,7 +135,9 @@ object DwsService {
 
 		result.coalesce(1).write.mode(SaveMode.Append).insertInto("dws.dws_qz_chapter")
 
-		//		sparkSession.sql("select * from dws.dws_qz_chapter limit 10").show(false)
+		sparkSession.sql("select * from dws.dws_qz_chapter limit 10")
+		println("===================saveDwsQzChapter=========================")
+
 	}
 
 	/**
@@ -152,7 +158,9 @@ object DwsService {
 
 		result.coalesce(1).write.mode(SaveMode.Append).insertInto("dws.dws_qz_course")
 
-//		sparkSession.sql("select * from dws.dws_qz_course limit 10").show()
+		sparkSession.sql("select * from dws.dws_qz_course limit 10")
+		println("===================saveDwsQzCourse=========================")
+
 	}
 
 	/**
@@ -174,7 +182,12 @@ object DwsService {
 			  "major_creator", "major_createtime", "businessname", "sitename", "domain", "multicastserver", "templateserver",
 			  "multicastgateway", "multicastport", "dt", "dn")
 		result.coalesce(1).write.mode(SaveMode.Append).insertInto("dws.dws_qz_major")
+
+		sparkSession.sql("select * from dws.dws_qz_major limit 10")
+		println("===================saveDwsQzMajor=========================")
 	}
+
+
 
 	/**
 	 * dws.dws_qz_paper(试卷维度表)
@@ -197,6 +210,9 @@ object DwsService {
 			  "dt", "dn")
 
 		result.coalesce(1).write.mode(SaveMode.Append).insertInto("dws.dws_qz_paper")
+
+		sparkSession.sql("select * from dws.dws_qz_paper limit 10")
+		println("===================saveDwsQzPaper=========================")
 	}
 
 	/**
@@ -213,6 +229,10 @@ object DwsService {
 			  , "attanswer", "questag", "vanalysisaddr", "difficulty", "quesskill", "vdeoaddr", "viewtypename", "papertypename",
 			  "remark", "splitscoretype", "dt", "dn")
 		result.coalesce(1).write.mode(SaveMode.Append).insertInto("dws.dws_qz_question")
+
+
+		sparkSession.sql("select * from dws.dws_qz_question limit 10")
+		println("===================saveDwsQzQuestionTpe=========================")
 	}
 
 
@@ -263,6 +283,9 @@ object DwsService {
 			  "question_questag", "question_vanalysisaddr", "question_difficulty", "quesskill", "vdeoaddr", "question_description",
 			  "question_splitscoretype", "user_question_answer", "dt", "dn").coalesce(1)
 		  .write.mode(SaveMode.Append).insertInto("dws.dws_user_paper_detail")
+
+		sparkSession.sql("select * from dws.dws_user_paper_detail limit 10")
+		println("===================saveDwsUserPaperDetail=========================")
 	}
 
 }

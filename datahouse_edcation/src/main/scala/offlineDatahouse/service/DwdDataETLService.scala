@@ -71,10 +71,12 @@ object DwdDataETLService {
 				  register, regupdatetime, unitname, userip, zipcode, dt, dn)
 			})
 		})
-		//		mapRDD.toDF().show()
+//				mapRDD.toDF().show()
 
 		//将数据追加（Append）写入指定表；insertInto不需要字段名对应，只需位置对应；它要求写入的表必须存在
 		mapRDD.toDF().coalesce(2).write.mode(SaveMode.Append).insertInto("dwd.dwd_member")
+		sparkSession.sql("select * from dwd.dwd_member limit 10")
+		println("===================etlMemberLog=========================")
 	}
 
 	//法二
@@ -95,6 +97,9 @@ object DwdDataETLService {
 		etlLogDataSet.show()
 		//DataSet转DataFrame
 		etlLogDataSet.toDF().coalesce(2).write.mode(SaveMode.Append).insertInto("dwd.dwd_member")
+
+		sparkSession.sql("select * from dwd.dwd_member limit 10")
+		println("===================etlMemberLog=========================")
 	}
 
 	/**
@@ -119,7 +124,9 @@ object DwdDataETLService {
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Overwrite).insertInto("dwd.dwd_base_ad")
 
-		//		sparkSession.sql("select * from dwd.dwd_base_ad").show()
+
+		sparkSession.sql("select * from dwd.dwd_base_ad limit 10")
+		println("===================etlBaseadLog=========================")
 	}
 
 
@@ -149,7 +156,8 @@ object DwdDataETLService {
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Overwrite).insertInto("dwd.dwd_base_website")
 
-		//		sparkSession.sql("select * from dwd.dwd_base_website limit 10").show()
+		sparkSession.sql("select * from dwd.dwd_base_website limit 10")
+		println("===================etlBasewebsiteLog=========================")
 	}
 
 	/**
@@ -192,7 +200,8 @@ object DwdDataETLService {
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_member_regtype")
 
-		//		sparkSession.sql("select * from dwd.dwd_member_regtype limit 10").show()
+		sparkSession.sql("select * from dwd.dwd_member_regtype limit 10")
+		println("===================etlMemberRegtypeLog=========================")
 	}
 
 
@@ -221,7 +230,8 @@ object DwdDataETLService {
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_pcentermempaymoney")
 
-		//		sparkSession.sql("select * from dwd.dwd_pcentermempaymoney limit 10").show()
+		sparkSession.sql("select * from dwd.dwd_pcentermempaymoney limit 10")
+		println("===================etlMemPayMoneyLog=========================")
 	}
 
 	/**
@@ -255,7 +265,8 @@ object DwdDataETLService {
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Overwrite).insertInto("dwd.dwd_vip_level")
 
-		//		sparkSession.sql("select * from dwd.dwd_vip_level limit 10").show()
+		sparkSession.sql("select * from dwd.dwd_vip_level limit 10")
+		println("===================etlMemVipLevelLog=========================")
 	}
 
 	//==============================================做题模块============================================================//
@@ -292,6 +303,9 @@ object DwdDataETLService {
 				  multicastgateway, multicastport, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_website")
+
+		sparkSession.sql("select * from dwd.dwd_qz_website limit 10")
+		println("===================etlQzWebsite=========================")
 	}
 
 
@@ -329,6 +343,9 @@ object DwdDataETLService {
 				  , createtime, helppaperstatus, servertype, boardid, showstatus, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_site_course")
+
+		sparkSession.sql("select * from dwd.dwd_qz_site_course limit 10")
+		println("===================etlQzSiteCourse=========================")
 	}
 
 
@@ -364,6 +381,9 @@ object DwdDataETLService {
 				  remark, splitscoretype, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_question_type")
+
+		sparkSession.sql("select * from dwd.dwd_qz_question_type limit 10")
+		println("===================etlQzQuestionType=========================")
 	}
 
 
@@ -414,6 +434,10 @@ object DwdDataETLService {
 					vdeoaddr, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_question")
+
+		sparkSession.sql("select * from dwd.dwd_qz_question limit 10")
+		println("===================etlQzQuestion=========================")
+
 	}
 
 
@@ -442,6 +466,10 @@ object DwdDataETLService {
 				(pointid, questionid, questtype, creator, createtime, dt, dn)
 			})
 		}).toDF().write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_point_question")
+
+		sparkSession.sql("select * from dwd.dwd_qz_point_question limit 10")
+		println("===================etlQzPointQuestion=========================")
+
 	}
 
 
@@ -494,6 +522,9 @@ object DwdDataETLService {
 							pointlist, dt, dn)
 					})
 				}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_point")
+
+		sparkSession.sql("select * from dwd.dwd_qz_point limit 10")
+		println("===================etlQzPoint=========================")
 
 
 //		//法二,解析JSON TODO 有问题,字段不匹配
@@ -560,6 +591,9 @@ object DwdDataETLService {
 		})
 		etlJsonRDD.toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_paper_view")
 
+		sparkSession.sql("select * from dwd.dwd_qz_paper_view limit 10")
+		println("===================etlJsonRDD=========================")
+
 	}
 
 
@@ -598,6 +632,9 @@ object DwdDataETLService {
 				  chapterlistid, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_paper")
+
+		sparkSession.sql("select * from dwd.dwd_qz_paper limit 10")
+		println("===================etlQzPaper=========================")
 	}
 
 
@@ -637,6 +674,9 @@ object DwdDataETLService {
 				(userid, paperviewid, chapterid, sitecourseid, questionid, majorid, useranswer, istrue, lasttime, opertype, paperid, spendtime, score, question_answer, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_member_paper_question")
+
+		sparkSession.sql("select * from dwd.dwd_qz_member_paper_question limit 10")
+		println("===================etlQzMemberPaperQuestion=========================")
 	}
 
 
@@ -670,6 +710,9 @@ object DwdDataETLService {
 				(majorid, businessid, siteid, majorname, shortname, status, sequence, creator, createtime, columm_sitetype, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_major")
+
+		sparkSession.sql("select * from dwd.dwd_qz_major limit 10")
+		println("===================etlQzMajor=========================")
 	}
 
 
@@ -699,6 +742,9 @@ object DwdDataETLService {
 				(courseeduid, edusubjectid, courseid, creator, createtime, majorid, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_course_edusubject")
+
+		sparkSession.sql("select * from dwd.dwd_qz_course_edusubject limit 10")
+		println("===================etlQzCourseEdusubject=========================")
 	}
 
 
@@ -734,6 +780,10 @@ object DwdDataETLService {
 				  , chapterlistid, pointlistid, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_course")
+
+		sparkSession.sql("select * from dwd.dwd_qz_course limit 10")
+		println("===================etlQzCourse=========================")
+
 	}
 
 
@@ -765,6 +815,9 @@ object DwdDataETLService {
 				(chapterlistid, chapterlistname, courseid, chapterallnum, sequence, status, creator, createtime, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_chapter_list")
+
+		sparkSession.sql("select * from dwd.dwd_qz_chapter_list limit 10")
+		println("===================etlQzChapterList=========================")
 	}
 
 
@@ -801,6 +854,9 @@ object DwdDataETLService {
 				  courseid, chapternum, outchapterid, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_chapter")
+
+		sparkSession.sql("select * from dwd.dwd_qz_chapter limit 10")
+		println("===================etlQzChapter=========================")
 	}
 
 
@@ -830,6 +886,9 @@ object DwdDataETLService {
 				(paperviewid, centerid, openstatus, sequence, creator, createtime, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_center_paper")
+
+		sparkSession.sql("select * from dwd.dwd_qz_center_paper limit 10")
+		println("===================etlQzCenterPaper=========================")
 	}
 
 
@@ -867,6 +926,9 @@ object DwdDataETLService {
 				  sequence, provideuser, centerviewtype, stage, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_center")
+
+		sparkSession.sql("select * from dwd.dwd_qz_center limit 10")
+		println("===================etlQzCenter=========================")
 	}
 
 
@@ -898,6 +960,9 @@ object DwdDataETLService {
 				(businessid, businessname, sequence, status, creator, createtime, siteid, dt, dn)
 			})
 		}).toDF().coalesce(1).write.mode(SaveMode.Append).insertInto("dwd.dwd_qz_business")
+
+		sparkSession.sql("select * from dwd.dwd_qz_business limit 10")
+		println("===================etlQzBusiness=========================")
 	}
 
 

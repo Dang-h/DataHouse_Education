@@ -12,7 +12,6 @@ object DwsController {
 		System.setProperty("HADOOP_USER_NAME", "atguigu")
 		val sparkConf: SparkConf = new SparkConf().setAppName("dws_member_import").setMaster("local[*]")
 		val sparkSession: SparkSession = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
-		val ssc: SparkContext = sparkSession.sparkContext
 
 		HiveUtil.openDynamicPartition(sparkSession) //开启动态分区
 		HiveUtil.openCompression(sparkSession) //开启压缩
@@ -36,6 +35,7 @@ object DwsController {
 		//做题宽表
 		DwsService.saveDwsUserPaperDetail(sparkSession,dt )
 
+		sparkSession.stop()
 	}
 
 }

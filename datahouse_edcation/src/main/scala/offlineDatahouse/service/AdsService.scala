@@ -183,7 +183,7 @@ object AdsService {
 		//		sparkSession.sql("select * from ads.ads_register_top3memberpay limit 10").show()
 	}
 
-	//=============================Quize===============================================================================
+	//====================================================Quize=========================================================
 
 
 	def QzQueryDetail(sparkSession: SparkSession, dt: String) = {
@@ -209,10 +209,10 @@ object AdsService {
 			  avg("spendtime").cast("decimal(10, 2)").as("avgspendtime"))
 		  .select("paperviewid", "paperviewname", "avgscore", "avgspendtime", "dt", "dn")
 
-		avgDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_avgtimeandscore")
-		avgDetail.show()
-
-		println("=============avgDetail============")
+//		avgDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_avgtimeandscore")
+//		avgDetail.show()
+//
+//		println("=============avgDetail============")
 
 
 		//统计各试卷最高分、最低分
@@ -232,14 +232,14 @@ object AdsService {
 		  //过滤条件
 		  .where(s"dt = ${dt}").groupBy("paperviewid", "paperviewname", "dt", "dn")
 		  //聚合函数
-		  .agg(max("score").as("maxscore"), min("score").as("minxcore"))
+		  .agg(max("score").as("maxscore"), min("score").as("minscore"))
 		  //输出字段
-		  .select("paperviewid", "papervirename", "maxscore", "minscore", "dt", "dn")
+		  .select("paperviewid", "paperviewname", "maxscore", "minscore", "dt", "dn")
 
 		//导入数据表
-		topScore.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_maxdetail")
-		topScore.show()
-		println("=============topScore============")
+//		topScore.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_maxdetail")
+//		topScore.show()
+//		println("=============topScore============")
 
 		//按试卷分组统计每份试卷的前三用户详情
 		/*
@@ -275,8 +275,8 @@ object AdsService {
 			  , "coursename", "majorname", "shortname", "papername", "score", "rk", "dt", "dn")
 
 		//数据导入
-		top3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_top3_userdetail")
-		top3UserDetail.show()
+//		top3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_top3_userdetail")
+//		top3UserDetail.show()
 
 		//按试卷分组统计每份试卷的倒数前三的用户详情
 		val low3UserDetail: DataFrame = sparkSession.sql("select *from dws.dws_user_paper_detail")
@@ -289,8 +289,8 @@ object AdsService {
 		  .select("userid", "paperviewid", "paperviewname", "chaptername", "pointname", "sitecoursename"
 			  , "coursename", "majorname", "shortname", "papername", "score", "rk", "dt", "dn")
 
-		low3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_low3_userdetail")
-		low3UserDetail.show()
+//		low3UserDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_low3_userdetail")
+//		low3UserDetail.show()
 
 		println("=============low3UserDetail============")
 
@@ -332,16 +332,14 @@ object AdsService {
 				.when(col("score") > 80 && col("score") <= 100, "80-100"))
 		  //score字段昨晚分数段处理就不再需要,drop
 		  .drop("score").groupBy("paperviewid", "paperviewname", "score_segment", "dt", "dn")
-		  .agg(concat_ws(",", collect_list("userid").cast("string").as("userids")))
-		  //TODO ??
-		  .as("userids")
+		  .agg(concat_ws(",", collect_list("userid").cast("string")).as("userids"))
+		  //TODO ??.as("userids")
 		  .select("paperviewid", "paperviewname", "score_segment", "userids", "dt", "dn")
 		  .orderBy("paperviewid", "score_segment")
 
 		paperScore.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_paper_scoresegment_user")
 		paperScore.show()
 		println("=============paperScore============")
-
 
 
 		//统计试卷未及格的人数，及格的人数，试卷的及格率 及格分数60
@@ -368,7 +366,58 @@ object AdsService {
 					  ) b
 					  ON a.paperviewid = b.paperviewid AND a.dn = b.dn) t
 		 */
+		//获取全部需要的数据,并缓存(两次使用)
+		val necessaryDataDF: DataFrame = sparkSession.sql("select * from dws.dws_user_paper_detail").cache()
+		//计算及格人数
+		val unPass: DataFrame = necessaryDataDF.select("paperviewid", "paperviewname", "dn", "dt")
+		  .where(s"dt = ${dt}").where("score between 0 and 59")
+		  .groupBy("paperviewid", "paperviewname", "dn", "dt")
+		  .agg(count("paperviewid").as("unpasscount"))
+		//计算不及格人数
+		val pass: DataFrame = necessaryDataDF.select("paperviewid", "dn")
+		  .where(s"dt = ${dt}").where("score>=60")
+		  .groupBy("paperviewid", "dn")
+		  .agg(count("paperviewid").as("passcount"))
 
+		val passRateDetail: DataFrame = unPass.join(pass, Seq("paperviewid", "dn"))
+		  //求及格率
+		  .withColumn("rate", col("passcount")./(col("passcount") + col("unpasscount"))
+			.cast("decimal(4,2)"))
+		  //输出结果
+		  .select("paperviewid", "paperviewname", "unpasscount", "passcount", "rate", "dt", "dn")
+
+		passRateDetail.coalesce(1).write.mode(SaveMode.Append).insertInto("ads.ads_user_paper_detail")
+
+		//释放缓存
+		necessaryDataDF.unpersist()
+		passRateDetail.show()
+		println("=============passRateDetail============")
+
+
+		//统计各题的错误数，正确数，错题率
+
+		val userQuestionDetail: DataFrame = sparkSession.sql("select * from dws.dws_user_paper_detail").cache()
+
+		val userQuestionError: DataFrame = userQuestionDetail.select("questionid", "dt", "dn", "user_question_answer")
+		  //user_question_answer用于辅助统计错题数且不在最后结果输出,用完之后drop
+		  .where(s"dt='$dt'").where("user_question_answer='0'").drop("user_question_answer")
+		  .groupBy("questionid", "dt", "dn")
+		  .agg(count("questionid").as("errcount"))
+
+		val userQuestionRight = userQuestionDetail.select("questionid", "dn", "user_question_answer")
+		  .where(s"dt='$dt'").where("user_question_answer='1'").drop("user_question_answer")
+		  .groupBy("questionid", "dn")
+		  .agg(count("questionid").as("rightcount"))
+
+		val errorQuestionRate: DataFrame = userQuestionError.join(userQuestionRight, Seq("questionid", "dn"))
+		  .withColumn("rate", (col("errcount") / (col("errcount") + col("rightcount"))).cast("decimal(4,2)"))
+		  .orderBy(desc("errcount")).coalesce(1)
+		  .select("questionid", "errcount", "rightcount", "rate", "dt", "dn")
+
+		errorQuestionRate.write.mode(SaveMode.Append).insertInto("ads.ads_user_question_detail")
+		errorQuestionRate.unpersist()
+		errorQuestionRate.show()
+		println("=============errorQuestionRate============")
 
 	}
 
